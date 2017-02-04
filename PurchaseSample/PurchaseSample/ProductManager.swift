@@ -26,6 +26,7 @@ class ProductManager: NSObject, SKProductsRequestDelegate {
         let productRequest = SKProductsRequest(productIdentifiers: Set(productIdentifiers))
         productRequest.delegate = productManager
         productRequest.start()
+        productManager.productRequest = productRequest
         managers.insert(productManager)
     }
     

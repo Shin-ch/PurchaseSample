@@ -10,7 +10,7 @@ import UIKit
 import StoreKit
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate,XXXPurchaseManagerDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate,PurchaseManagerDelegate {
 
     var window: UIWindow?
 

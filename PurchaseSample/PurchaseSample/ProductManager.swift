@@ -10,13 +10,29 @@ import Foundation
 import StoreKit
 
 
-class ProductManager: NSObject, SKProductsRequestDelegate {
+enum ProductManagerError: Error {
+    case noProducts
+    case unkown
     
-    static private var managers: Set<ProductManager> = Set()
+    var localizedDescription: String {
+        switch self {
+        case .noProducts:
+            return "プロダクトを取得できませんでした。"
+        default:
+            return "不明なエラー"
+        }
+    }
+}
+
+class ProductManager: NSObject {
+    
+    static fileprivate var managers: Set<ProductManager> = Set()
     
     fileprivate var completion: ([SKProduct], Error?) -> Void
+
+    private var productRequest: SKProductsRequest?
     
-    init(completion: @escaping ([SKProduct], Error?) -> Void) {
+    private init(completion: @escaping ([SKProduct], Error?) -> Void) {
         self.completion = completion
     }
     
@@ -30,17 +46,16 @@ class ProductManager: NSObject, SKProductsRequestDelegate {
         managers.insert(productManager)
     }
     
-    // MARK: - SKProducts Request Delegate
+}
+
+// MARK: - SKProducts Request Delegate
+extension ProductManager: SKProductsRequestDelegate{
     func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
-        var error : NSError? = nil
-        if response.products.count == 0 {
-            error = NSError(domain: "ProductsRequestErrorDomain", code: 0, userInfo: [NSLocalizedDescriptionKey:"プロダクトを取得できませんでした。"])
-        }
+        let error = response.products.isEmpty ? nil : ProductManagerError.noProducts
         completion(response.products, error)
     }
     
     func request(_ request: SKRequest, didFailWithError error: Error) {
-        let error = NSError(domain: "ProductsRequestErrorDomain", code: 0, userInfo: [NSLocalizedDescriptionKey:"プロダクトを取得できませんでした。"])
         completion([],error)
         ProductManager.managers.remove(self)
     }
@@ -48,7 +63,6 @@ class ProductManager: NSObject, SKProductsRequestDelegate {
     func requestDidFinish(_ request: SKRequest) {
         ProductManager.managers.remove(self)
     }
-    
 }
 
 
@@ -59,8 +73,8 @@ extension SKProduct {
         let numberFormatter = NumberFormatter()
         numberFormatter.formatterBehavior = .behavior10_4
         numberFormatter.numberStyle = .currency
-        numberFormatter.locale = self.priceLocale
-        return numberFormatter.string(from: self.price)!
+        numberFormatter.locale = priceLocale
+        return numberFormatter.string(from: price) ?? "--"
     }
 }
 

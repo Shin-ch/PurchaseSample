@@ -10,10 +10,10 @@ import UIKit
 import StoreKit
 
 
-let productIdentifiers : [String] = ["productIdentifier1","productIdentifier2"]
 
-class ViewController: UIViewController,XXXPurchaseManagerDelegate {
+class ViewController: UIViewController,PurchaseManagerDelegate {
     
+    let productIdentifiers : [String] = ["productIdentifier1","productIdentifier2"]
     
     @IBOutlet weak var label : UILabel?
     

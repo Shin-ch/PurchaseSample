@@ -10,39 +10,59 @@ import Foundation
 import StoreKit
 
 
+struct PurchaseManagerErrors: OptionSet, Error {
+    let rawValue: Int
+    static let cannotMakePayments   = PurchaseManagerErrors(rawValue: 1 << 0)
+    static let purchasing           = PurchaseManagerErrors(rawValue: 1 << 1)
+    static let restoreing           = PurchaseManagerErrors(rawValue: 1 << 2)
+    
+    var localizedDescription: String {
+        var message = ""
+        
+        if self.contains(.cannotMakePayments) {
+            message += "設定で購入が無効になっています。"
+        }
+        
+        if self.contains(.purchasing) {
+            message += "課金処理中です。"
+        }
+        
+        if self.contains(.restoreing) {
+            message += "リストア中です。"
+        }
+        return message
+    }
+}
+
 class PurchaseManager : NSObject,SKPaymentTransactionObserver {
     
     open static var shared = PurchaseManager()
 
-    weak var delegate : XXXPurchaseManagerDelegate?
+    weak var delegate : PurchaseManagerDelegate?
     
     private var productIdentifier : String?
     private var isRestore : Bool = false
     
     /// 課金開始
     func start(_ product: SKProduct){
-        var errorCount = 0
-        var errorMessage = ""
+        
+        var errors: PurchaseManagerErrors = []
         
         if SKPaymentQueue.canMakePayments() == false {
-            errorCount += 1
-            errorMessage = "設定で購入が無効になっています。"
+            errors.insert(.cannotMakePayments)
         }
         
         if productIdentifier != nil {
-            errorCount += 10
-            errorMessage = "課金処理中です。"
+            errors.insert(.purchasing)
         }
         
         if isRestore == true {
-            errorCount += 100
-            errorMessage = "リストア中です。"
+            errors.insert(.restoreing)
         }
         
         //エラーがあれば終了
-        if errorCount > 0 {
-            let error = NSError(domain: "PurchaseErrorDomain", code: errorCount, userInfo: [NSLocalizedDescriptionKey:errorMessage + "(\(errorCount))"])
-            delegate?.purchaseManager?(self, didFailWithError: error)
+        guard errors.isEmpty else {
+            delegate?.purchaseManager?(self, didFailWithError: errors)
             return
         }
         
@@ -77,8 +97,7 @@ class PurchaseManager : NSObject,SKPaymentTransactionObserver {
             isRestore = true
             SKPaymentQueue.default().restoreCompletedTransactions()
         }else{
-            let error = NSError(domain: "PurchaseErrorDomain", code: 0, userInfo: [NSLocalizedDescriptionKey:"リストア処理中です。"])
-            delegate?.purchaseManager?(self, didFailWithError: error)
+            delegate?.purchaseManager?(self, didFailWithError: PurchaseManagerErrors.restoreing)
         }
     }
     
@@ -112,7 +131,7 @@ class PurchaseManager : NSObject,SKPaymentTransactionObserver {
     
     func paymentQueue(_ queue: SKPaymentQueue, restoreCompletedTransactionsFailedWithError error: Error) {
         //リストア失敗時に呼ばれる
-        delegate?.purchaseManager?(self, didFailWithError: error as NSError!)
+        delegate?.purchaseManager?(self, didFailWithError: error)
         isRestore = false
     }
     
@@ -171,15 +190,15 @@ class PurchaseManager : NSObject,SKPaymentTransactionObserver {
 }
 
 
-@objc protocol XXXPurchaseManagerDelegate {
-    //課金完了
+@objc protocol PurchaseManagerDelegate {
+    ///課金完了
     @objc optional func purchaseManager(_ purchaseManager: PurchaseManager, didFinishPurchaseWithTransaction transaction: SKPaymentTransaction, decisionHandler: (_ complete: Bool) -> Void)
-    //課金完了(中断していたもの)
+    ///課金完了(中断していたもの)
     @objc optional func purchaseManager(_ purchaseManager: PurchaseManager, didFinishUntreatedPurchaseWithTransaction transaction: SKPaymentTransaction, decisionHandler: (_ complete: Bool) -> Void)
-    //リストア完了
+    ///リストア完了
     @objc optional func purchaseManagerDidFinishRestore(_ purchaseManager: PurchaseManager)
-    //課金失敗
+    ///課金失敗
     @objc optional func purchaseManager(_ purchaseManager: PurchaseManager, didFailWithError error: Error?)
-    //承認待ち(ファミリー共有)
+    ///承認待ち(ファミリー共有)
     @objc optional func purchaseManagerDidDeferred(_ purchaseManager: PurchaseManager)
 }

@@ -93,7 +93,7 @@ final public class ProductManager: NSObject {
 // MARK: - SKProducts Request Delegate
 extension ProductManager: SKProductsRequestDelegate{
     public func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
-        let error = response.products.isEmpty ? nil : ProductManagerError.noValidProducts
+        let error = !response.products.isEmpty ? nil : ProductManagerError.noValidProducts
         completion(response.products, error)
     }
     

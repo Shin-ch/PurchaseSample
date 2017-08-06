@@ -10,13 +10,14 @@ import Foundation
 import StoreKit
 
 
+/// 課金エラー
 struct PurchaseManagerErrors: OptionSet, Error {
-    let rawValue: Int
+    public let rawValue: Int
     static let cannotMakePayments   = PurchaseManagerErrors(rawValue: 1 << 0)
     static let purchasing           = PurchaseManagerErrors(rawValue: 1 << 1)
     static let restoreing           = PurchaseManagerErrors(rawValue: 1 << 2)
     
-    var localizedDescription: String {
+    public var localizedDescription: String {
         var message = ""
         
         if self.contains(.cannotMakePayments) {
@@ -34,17 +35,18 @@ struct PurchaseManagerErrors: OptionSet, Error {
     }
 }
 
-class PurchaseManager : NSObject,SKPaymentTransactionObserver {
+/// 課金するためのクラス
+open class PurchaseManager : NSObject {
     
     open static var shared = PurchaseManager()
 
-    weak var delegate : PurchaseManagerDelegate?
+    open weak var delegate : PurchaseManagerDelegate?
     
     private var productIdentifier : String?
-    private var isRestore : Bool = false
+    fileprivate var isRestore : Bool = false
     
     /// 課金開始
-    func start(_ product: SKProduct){
+    public func start(_ product: SKProduct){
         
         var errors: PurchaseManagerErrors = []
         
@@ -74,13 +76,13 @@ class PurchaseManager : NSObject,SKPaymentTransactionObserver {
                 guard let window = UIApplication.shared.delegate?.window else { continue }
                 let ac = UIAlertController(title: nil, message: "\(product.localizedTitle)は購入処理が中断されていました。\nこのまま無料でダウンロードできます。", preferredStyle: .alert)
                 let action = UIAlertAction(title: "続行", style: UIAlertActionStyle.default, handler: {[weak self] (action : UIAlertAction!) -> Void in
-                    if let weakSelf = self {
-                        weakSelf.productIdentifier = product.productIdentifier
-                        weakSelf.completeTransaction(transaction)
+                    if let strongSelf = self {
+                        strongSelf.productIdentifier = product.productIdentifier
+                        strongSelf.completeTransaction(transaction)
                     }
                 })
                 ac.addAction(action)
-                window!.rootViewController?.present(ac, animated: true, completion: nil)
+                window?.rootViewController?.present(ac, animated: true, completion: nil)
                 return
             }
         }
@@ -92,7 +94,7 @@ class PurchaseManager : NSObject,SKPaymentTransactionObserver {
     }
     
     /// リストア開始
-    func startRestore(){
+    public func startRestore(){
         if isRestore == false {
             isRestore = true
             SKPaymentQueue.default().restoreCompletedTransactions()
@@ -101,8 +103,55 @@ class PurchaseManager : NSObject,SKPaymentTransactionObserver {
         }
     }
     
+    // MARK: - SKPaymentTransaction process
+    fileprivate func completeTransaction(_ transaction : SKPaymentTransaction) {
+        if transaction.payment.productIdentifier == self.productIdentifier {
+            //課金終了
+            delegate?.purchaseManager?(self, didFinishPurchaseWithTransaction: transaction, decisionHandler: { (complete) -> Void in
+                if complete == true {
+                    //トランザクション終了
+                    SKPaymentQueue.default().finishTransaction(transaction)
+                }
+            })
+            productIdentifier = nil
+        }else{
+            //課金終了(以前中断された課金処理)
+            delegate?.purchaseManager?(self, didFinishUntreatedPurchaseWithTransaction: transaction, decisionHandler: { (complete) -> Void in
+                if complete == true {
+                    //トランザクション終了
+                    SKPaymentQueue.default().finishTransaction(transaction)
+                }
+            })
+        }
+    }
+    
+    fileprivate func failedTransaction(_ transaction : SKPaymentTransaction) {
+        //課金失敗
+        delegate?.purchaseManager?(self, didFailWithError: transaction.error)
+        productIdentifier = nil
+        SKPaymentQueue.default().finishTransaction(transaction)
+    }
+    
+    fileprivate func restoreTransaction(_ transaction : SKPaymentTransaction) {
+        //リストア(originalTransactionをdidFinishPurchaseWithTransactionで通知)　※設計に応じて変更
+        delegate?.purchaseManager?(self, didFinishPurchaseWithTransaction: transaction, decisionHandler: { (complete) -> Void in
+            if complete == true {
+                //トランザクション終了
+                SKPaymentQueue.default().finishTransaction(transaction)
+            }
+        })
+    }
+    
+    fileprivate func deferredTransaction(_ transaction : SKPaymentTransaction) {
+        //承認待ち
+        delegate?.purchaseManagerDidDeferred?(self)
+        productIdentifier = nil
+    }
+}
+
+extension PurchaseManager : SKPaymentTransactionObserver {
     // MARK: - SKPaymentTransactionObserver
-    func paymentQueue(_ queue: SKPaymentQueue, updatedTransactions transactions: [SKPaymentTransaction]) {
+    public func paymentQueue(_ queue: SKPaymentQueue, updatedTransactions transactions: [SKPaymentTransaction]) {
         //課金状態が更新されるたびに呼ばれる
         for transaction in transactions {
             switch transaction.transactionState {
@@ -129,68 +178,22 @@ class PurchaseManager : NSObject,SKPaymentTransactionObserver {
         }
     }
     
-    func paymentQueue(_ queue: SKPaymentQueue, restoreCompletedTransactionsFailedWithError error: Error) {
+    public func paymentQueue(_ queue: SKPaymentQueue, restoreCompletedTransactionsFailedWithError error: Error) {
         //リストア失敗時に呼ばれる
         delegate?.purchaseManager?(self, didFailWithError: error)
         isRestore = false
     }
     
-    func paymentQueueRestoreCompletedTransactionsFinished(_ queue: SKPaymentQueue) {
+    public func paymentQueueRestoreCompletedTransactionsFinished(_ queue: SKPaymentQueue) {
         //リストア完了時に呼ばれる
         delegate?.purchaseManagerDidFinishRestore?(self)
         isRestore = false
     }
     
-    
-    
-    // MARK: - SKPaymentTransaction process
-    private func completeTransaction(_ transaction : SKPaymentTransaction) {
-        if transaction.payment.productIdentifier == self.productIdentifier {
-            //課金終了
-            delegate?.purchaseManager?(self, didFinishPurchaseWithTransaction: transaction, decisionHandler: { (complete) -> Void in
-                if complete == true {
-                    //トランザクション終了
-                    SKPaymentQueue.default().finishTransaction(transaction)
-                }
-            })
-            productIdentifier = nil
-        }else{
-            //課金終了(以前中断された課金処理)
-            delegate?.purchaseManager?(self, didFinishUntreatedPurchaseWithTransaction: transaction, decisionHandler: { (complete) -> Void in
-                if complete == true {
-                    //トランザクション終了
-                    SKPaymentQueue.default().finishTransaction(transaction)
-                }
-            })
-        }
-    }
-    
-    private func failedTransaction(_ transaction : SKPaymentTransaction) {
-        //課金失敗
-        delegate?.purchaseManager?(self, didFailWithError: transaction.error)
-        productIdentifier = nil
-        SKPaymentQueue.default().finishTransaction(transaction)
-    }
-    
-    private func restoreTransaction(_ transaction : SKPaymentTransaction) {
-        //リストア(originalTransactionをdidFinishPurchaseWithTransactionで通知)　※設計に応じて変更
-        delegate?.purchaseManager?(self, didFinishPurchaseWithTransaction: transaction, decisionHandler: { (complete) -> Void in
-            if complete == true {
-                //トランザクション終了
-                SKPaymentQueue.default().finishTransaction(transaction)
-            }
-        })
-    }
-    
-    private func deferredTransaction(_ transaction : SKPaymentTransaction) {
-        //承認待ち
-        delegate?.purchaseManagerDidDeferred?(self)
-        productIdentifier = nil
-    }
 }
 
 
-@objc protocol PurchaseManagerDelegate {
+@objc public protocol PurchaseManagerDelegate {
     ///課金完了
     @objc optional func purchaseManager(_ purchaseManager: PurchaseManager, didFinishPurchaseWithTransaction transaction: SKPaymentTransaction, decisionHandler: (_ complete: Bool) -> Void)
     ///課金完了(中断していたもの)

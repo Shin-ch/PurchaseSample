@@ -46,7 +46,7 @@ open class PurchaseManager : NSObject {
     fileprivate var isRestore : Bool = false
     
     /// 課金開始
-    public func start(_ product: SKProduct){
+    public func purchase(_ product: SKProduct){
         
         var errors: PurchaseManagerErrors = []
         
@@ -94,7 +94,7 @@ open class PurchaseManager : NSObject {
     }
     
     /// リストア開始
-    public func startRestore(){
+    public func restore(){
         if isRestore == false {
             isRestore = true
             SKPaymentQueue.default().restoreCompletedTransactions()

@@ -70,7 +70,7 @@ class ViewController: UIViewController {
                 }
                 
                 //課金処理開始
-                PurchaseManager.shared.start(product)
+                PurchaseManager.shared.purchase(product)
         })
     }
 
@@ -80,7 +80,7 @@ class ViewController: UIViewController {
         PurchaseManager.shared.delegate = self
         
         //リストア開始
-        PurchaseManager.shared.startRestore()
+        PurchaseManager.shared.restore()
     }
 
 }

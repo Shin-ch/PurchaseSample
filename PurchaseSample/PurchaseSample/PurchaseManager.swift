@@ -64,7 +64,7 @@ open class PurchaseManager : NSObject {
         
         //エラーがあれば終了
         guard errors.isEmpty else {
-            delegate?.purchaseManager?(self, didFailWithError: errors)
+            delegate?.purchaseManager?(self, didFailTransactionWithError: errors)
             return
         }
         
@@ -99,7 +99,7 @@ open class PurchaseManager : NSObject {
             isRestore = true
             SKPaymentQueue.default().restoreCompletedTransactions()
         }else{
-            delegate?.purchaseManager?(self, didFailWithError: PurchaseManagerErrors.restoreing)
+            delegate?.purchaseManager?(self, didFailTransactionWithError: PurchaseManagerErrors.restoreing)
         }
     }
     
@@ -107,7 +107,7 @@ open class PurchaseManager : NSObject {
     private func completeTransaction(_ transaction : SKPaymentTransaction) {
         if transaction.payment.productIdentifier == self.productIdentifier {
             //課金終了
-            delegate?.purchaseManager?(self, didFinishPurchaseWithTransaction: transaction, decisionHandler: { (complete) -> Void in
+            delegate?.purchaseManager?(self, didFinishTransaction: transaction, decisionHandler: { (complete) -> Void in
                 if complete == true {
                     //トランザクション終了
                     SKPaymentQueue.default().finishTransaction(transaction)
@@ -116,7 +116,7 @@ open class PurchaseManager : NSObject {
             productIdentifier = nil
         }else{
             //課金終了(以前中断された課金処理)
-            delegate?.purchaseManager?(self, didFinishUntreatedPurchaseWithTransaction: transaction, decisionHandler: { (complete) -> Void in
+            delegate?.purchaseManager?(self, didFinishUntreatedTransaction: transaction, decisionHandler: { (complete) -> Void in
                 if complete == true {
                     //トランザクション終了
                     SKPaymentQueue.default().finishTransaction(transaction)
@@ -127,14 +127,14 @@ open class PurchaseManager : NSObject {
     
     private func failedTransaction(_ transaction : SKPaymentTransaction) {
         //課金失敗
-        delegate?.purchaseManager?(self, didFailWithError: transaction.error)
+        delegate?.purchaseManager?(self, didFailTransactionWithError: transaction.error)
         productIdentifier = nil
         SKPaymentQueue.default().finishTransaction(transaction)
     }
     
     private func restoreTransaction(_ transaction : SKPaymentTransaction) {
         //リストア(originalTransactionをdidFinishPurchaseWithTransactionで通知)　※設計に応じて変更
-        delegate?.purchaseManager?(self, didFinishPurchaseWithTransaction: transaction, decisionHandler: { (complete) -> Void in
+        delegate?.purchaseManager?(self, didFinishTransaction: transaction, decisionHandler: { (complete) -> Void in
             if complete == true {
                 //トランザクション終了
                 SKPaymentQueue.default().finishTransaction(transaction)
@@ -180,7 +180,7 @@ extension PurchaseManager : SKPaymentTransactionObserver {
     
     public func paymentQueue(_ queue: SKPaymentQueue, restoreCompletedTransactionsFailedWithError error: Error) {
         //リストア失敗時に呼ばれる
-        delegate?.purchaseManager?(self, didFailWithError: error)
+        delegate?.purchaseManager?(self, didFailTransactionWithError: error)
         isRestore = false
     }
     
@@ -195,13 +195,13 @@ extension PurchaseManager : SKPaymentTransactionObserver {
 
 @objc public protocol PurchaseManagerDelegate {
     ///課金完了
-    @objc optional func purchaseManager(_ purchaseManager: PurchaseManager, didFinishPurchaseWithTransaction transaction: SKPaymentTransaction, decisionHandler: (_ complete: Bool) -> Void)
+    @objc optional func purchaseManager(_ purchaseManager: PurchaseManager, didFinishTransaction transaction: SKPaymentTransaction, decisionHandler: (_ complete: Bool) -> Void)
     ///課金完了(中断していたもの)
-    @objc optional func purchaseManager(_ purchaseManager: PurchaseManager, didFinishUntreatedPurchaseWithTransaction transaction: SKPaymentTransaction, decisionHandler: (_ complete: Bool) -> Void)
+    @objc optional func purchaseManager(_ purchaseManager: PurchaseManager, didFinishUntreatedTransaction transaction: SKPaymentTransaction, decisionHandler: (_ complete: Bool) -> Void)
     ///リストア完了
     @objc optional func purchaseManagerDidFinishRestore(_ purchaseManager: PurchaseManager)
     ///課金失敗
-    @objc optional func purchaseManager(_ purchaseManager: PurchaseManager, didFailWithError error: Error?)
+    @objc optional func purchaseManager(_ purchaseManager: PurchaseManager, didFailTransactionWithError error: Error?)
     ///承認待ち(ファミリー共有)
     @objc optional func purchaseManagerDidDeferred(_ purchaseManager: PurchaseManager)
 }

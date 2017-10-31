@@ -65,7 +65,7 @@ class ViewController: UIViewController {
         ProductManager.request(productIdentifier: productId,
             completion: {[weak self]  (product: SKProduct?, error: Error?) -> Void in
                 guard error == nil, let product = product else {
-                    self?.purchaseManager(PurchaseManager.shared, didFailWithError: error)
+                    self?.purchaseManager(PurchaseManager.shared, didFailTransactionWithError: error)
                     return
                 }
                 
@@ -87,7 +87,7 @@ class ViewController: UIViewController {
 
 // MARK: - PurchaseManager Delegate
 extension ViewController: PurchaseManagerDelegate {
-    func purchaseManager(_ purchaseManager: PurchaseManager, didFinishPurchaseWithTransaction transaction: SKPaymentTransaction, decisionHandler: (Bool) -> Void) {
+    func purchaseManager(_ purchaseManager: PurchaseManager, didFinishTransaction transaction: SKPaymentTransaction, decisionHandler: (Bool) -> Void) {
         //課金終了時に呼び出される
         /*
          TODO: コンテンツ解放処理
@@ -105,7 +105,7 @@ extension ViewController: PurchaseManagerDelegate {
         decisionHandler(true)
     }
     
-    func purchaseManager(_ purchaseManager: PurchaseManager, didFinishUntreatedPurchaseWithTransaction transaction: SKPaymentTransaction, decisionHandler: (Bool) -> Void) {
+    func purchaseManager(_ purchaseManager: PurchaseManager, didFinishUntreatedTransaction transaction: SKPaymentTransaction, decisionHandler: (Bool) -> Void) {
         //課金終了時に呼び出される(startPurchaseで指定したプロダクトID以外のものが課金された時。)
         /*
          TODO: コンテンツ解放処理
@@ -124,7 +124,7 @@ extension ViewController: PurchaseManagerDelegate {
         decisionHandler(true)
     }
     
-    func purchaseManager(_ purchaseManager: PurchaseManager, didFailWithError error: Error?) {
+    func purchaseManager(_ purchaseManager: PurchaseManager, didFailTransactionWithError error: Error?) {
         //課金失敗時に呼び出される
         /*
          TODO: errorを使ってアラート表示

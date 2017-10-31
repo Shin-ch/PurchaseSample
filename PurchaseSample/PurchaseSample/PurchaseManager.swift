@@ -43,7 +43,7 @@ open class PurchaseManager : NSObject {
     open weak var delegate : PurchaseManagerDelegate?
     
     private var productIdentifier : String?
-    fileprivate var isRestore : Bool = false
+    private var isRestore : Bool = false
     
     /// 課金開始
     public func purchase(_ product: SKProduct){
@@ -104,7 +104,7 @@ open class PurchaseManager : NSObject {
     }
     
     // MARK: - SKPaymentTransaction process
-    fileprivate func completeTransaction(_ transaction : SKPaymentTransaction) {
+    private func completeTransaction(_ transaction : SKPaymentTransaction) {
         if transaction.payment.productIdentifier == self.productIdentifier {
             //課金終了
             delegate?.purchaseManager?(self, didFinishPurchaseWithTransaction: transaction, decisionHandler: { (complete) -> Void in
@@ -125,14 +125,14 @@ open class PurchaseManager : NSObject {
         }
     }
     
-    fileprivate func failedTransaction(_ transaction : SKPaymentTransaction) {
+    private func failedTransaction(_ transaction : SKPaymentTransaction) {
         //課金失敗
         delegate?.purchaseManager?(self, didFailWithError: transaction.error)
         productIdentifier = nil
         SKPaymentQueue.default().finishTransaction(transaction)
     }
     
-    fileprivate func restoreTransaction(_ transaction : SKPaymentTransaction) {
+    private func restoreTransaction(_ transaction : SKPaymentTransaction) {
         //リストア(originalTransactionをdidFinishPurchaseWithTransactionで通知)　※設計に応じて変更
         delegate?.purchaseManager?(self, didFinishPurchaseWithTransaction: transaction, decisionHandler: { (complete) -> Void in
             if complete == true {
@@ -142,7 +142,7 @@ open class PurchaseManager : NSObject {
         })
     }
     
-    fileprivate func deferredTransaction(_ transaction : SKPaymentTransaction) {
+    private func deferredTransaction(_ transaction : SKPaymentTransaction) {
         //承認待ち
         delegate?.purchaseManagerDidDeferred?(self)
         productIdentifier = nil

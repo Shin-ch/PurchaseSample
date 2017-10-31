@@ -35,14 +35,16 @@ public enum ProductManagerError: Error {
 /// 価格情報を取得するためのクラス
 final public class ProductManager: NSObject {
     ///保持用
-    static fileprivate var managers: Set<ProductManager> = Set()
+    static private var managers: Set<ProductManager> = Set()
     
     ///完了通知
     public typealias Completion = ([SKProduct], Error?) -> Void
+    
+    ///完了通知
     public typealias CompletionForSingle = (SKProduct?, Error?) -> Void
     
     ///完了通知用
-    fileprivate var completion: Completion
+    private var completion: Completion
 
     ///価格問い合わせ用オブジェクト(保持用)
     private var productRequest: SKProductsRequest?
@@ -53,6 +55,10 @@ final public class ProductManager: NSObject {
     }
     
     /// 課金アイテム情報を取得(複数)
+    ///
+    /// - Parameters:
+    ///   - productIdentifiers: プロダクトID配列
+    ///   - completion: 課金アイテム情報取得完了時の処理
     class func request(productIdentifiers: [String], completion: @escaping Completion) {
         guard !productIdentifiers.isEmpty else {
             completion([], ProductManagerError.emptyProductIdentifiers)
@@ -68,6 +74,10 @@ final public class ProductManager: NSObject {
     }
     
     /// 課金アイテム情報を取得(1つ)
+    ///
+    /// - Parameters:
+    ///   - productIdentifier: プロダクトID
+    ///   - completion: 課金アイテム情報取得完了時の処理
     class func request(productIdentifier: String, completion: @escaping CompletionForSingle) {
         ProductManager.request(productIdentifiers: [productIdentifier]) { (products, error) in
             guard error == nil else {

@@ -33,7 +33,7 @@ class ViewController: UIViewController {
                                 
                                 for product in products {
                                     //価格を抽出
-                                    let priceString = product.localizedPrice
+                                    let priceString = product.localizedPrice ?? "--"
                                     /*
                                      TODO: UI更新
                                      

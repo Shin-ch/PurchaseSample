@@ -15,6 +15,7 @@ public enum ProductManagerError: Error {
     case emptyProductIdentifiers
     case noValidProducts
     case notMatchProductIdentifier
+    case skError(messaga: String)
     case unkown
     
     public var localizedDescription: String {
@@ -25,6 +26,8 @@ public enum ProductManagerError: Error {
             return "有効なプロダクトを取得できませんでした。"
         case .notMatchProductIdentifier:
             return "指定したプロダクトIDと取得したプロダクトIDが一致していません。"
+        case .skError(let message):
+            return message
         default:
             return "不明なエラー"
         }
@@ -108,7 +111,7 @@ extension ProductManager: SKProductsRequestDelegate{
     }
     
     public func request(_ request: SKRequest, didFailWithError error: Error) {
-        completion([],error)
+        completion([], ProductManagerError.skError(messaga: error.localizedDescription))
         ProductManager.managers.remove(self)
     }
     

@@ -33,7 +33,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,PurchaseManagerDelegate {
         SKPaymentQueue.default().remove(PurchaseManager.shared);
     }
 
-    func purchaseManager(_ purchaseManager: PurchaseManager, didFinishUntreatedPurchaseWithTransaction transaction: SKPaymentTransaction, decisionHandler: (Bool) -> Void) {
+    func purchaseManager(_ purchaseManager: PurchaseManager, didFinishUntreatedTransaction transaction: SKPaymentTransaction, decisionHandler: (Bool) -> Void) {
         //課金終了(前回アプリ起動時課金処理が中断されていた場合呼ばれる)
         /*
         

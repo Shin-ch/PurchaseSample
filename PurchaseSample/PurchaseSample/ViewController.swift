@@ -10,10 +10,10 @@ import UIKit
 import StoreKit
 
 
-let productIdentifiers : [String] = ["productIdentifier1","productIdentifier2"]
 
-class ViewController: UIViewController,XXXPurchaseManagerDelegate {
+class ViewController: UIViewController {
     
+    let productIdentifiers : [String] = ["productIdentifier1"]
     
     @IBOutlet weak var label : UILabel?
     
@@ -22,168 +22,153 @@ class ViewController: UIViewController,XXXPurchaseManagerDelegate {
         // Do any additional setup after loading the view, typically from a nib.
         
         //プロダクト情報取得
-        fetchProductInformationForIds(productIdentifiers)
-        
-    }
-    
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-    
-    @IBAction func purchaseButton(sender:UIButton!) {
-        //課金開始（サンプルでは"productIdentifier1"決め打ちで）
-        purchase(productIdentifiers[0])
-    }
-
-    ///プロダクト情報取得
-    private func fetchProductInformationForIds(productIds:[String]) {
-        XXXProductManager.productsWithProductIdentifiers(productIds,
-            completion: {[weak self] (products : [SKProduct]!, error : NSError?) -> Void in
-                if error != nil {
-                    if let weakSelf = self {
-                        weakSelf.label?.text = error?.localizedDescription
-                    }
-                    print(error?.localizedDescription)
-                    return
-                }
-                
-                for product in products {
-                    //価格を抽出
-                    let priceString = XXXProductManager.priceStringFromProduct(product)
-                    /*
-                    TODO: UI更新
-                    
-                    
-                    
-                    
-                    
-                    */
-                    if let weakSelf = self {
-                        weakSelf.label?.text = product.localizedTitle + ":\(priceString)"
-                    }
-                    print(product.localizedTitle + ":\(priceString)" )
-                }
+        ProductManager.request(productIdentifiers: productIdentifiers,
+                               completion: {[weak self] (products: [SKProduct], error: Error?) -> Void in
+                                guard error == nil else {
+                                    let text = (error as? ProductManagerError)?.localizedDescription ?? "error"
+                                    self?.label?.text = text
+                                    print(text)
+                                    return
+                                }
+                                
+                                for product in products {
+                                    //価格を抽出
+                                    let priceString = product.localizedPrice ?? "--"
+                                    /*
+                                     TODO: UI更新
+                                     
+                                     
+                                     
+                                     
+                                     
+                                     */
+                                    let text = product.localizedTitle + " : \(priceString)"
+                                    self?.label?.text = text
+                                    print(text)
+                                }
+                                
         })
     }
-    
+
+    @IBAction func didTappPurchaseButton(_ sender: UIButton!) {
+        //課金開始（サンプルでは"productIdentifier1"決め打ちで）
+        guard let productIdentifier = productIdentifiers.first else { return }
+        purchase(productIdentifier)
+    }
+
     ///課金開始
-    private func purchase(productId:String) {
+    private func purchase(_ productId: String) {
         //デリゲード設定
-        XXXPurchaseManager.sharedManager().delegate = self
+        PurchaseManager.shared.delegate = self
         
         //プロダクト情報を取得
-        XXXProductManager.productsWithProductIdentifiers([productId],
-            completion: {[weak self]  (products : [SKProduct]!, error : NSError?) -> Void in
-                if error != nil {
-                    if let weakSelf = self {
-                        weakSelf.purchaseManager(XXXPurchaseManager.sharedManager(), didFailWithError: error)
-                    }
+        ProductManager.request(productIdentifier: productId,
+            completion: {[weak self]  (product: SKProduct?, error: Error?) -> Void in
+                guard error == nil, let product = product else {
+                    self?.purchaseManager(PurchaseManager.shared, didFailTransactionWithError: error)
                     return
                 }
                 
-                if products.count > 0 {
-                    //課金処理開始
-                    XXXPurchaseManager.sharedManager().startWithProduct(products[0])
-                }
+                //課金処理開始
+                PurchaseManager.shared.purchase(product)
         })
     }
 
     /// リストア開始
-    func startRestore() {
+    private func startRestore() {
         //デリゲード設定
-        XXXPurchaseManager.sharedManager().delegate = self
+        PurchaseManager.shared.delegate = self
         
         //リストア開始
-        XXXPurchaseManager.sharedManager().startRestore()
+        PurchaseManager.shared.restore()
     }
-    
-    
-    // MARK: - XXXPurchaseManager Delegate
-    func purchaseManager(purchaseManager: XXXPurchaseManager!, didFinishPurchaseWithTransaction transaction: SKPaymentTransaction!, decisionHandler: ((complete: Bool) -> Void)!) {
+
+}
+
+// MARK: - PurchaseManager Delegate
+extension ViewController: PurchaseManagerDelegate {
+    func purchaseManager(_ purchaseManager: PurchaseManager, didFinishTransaction transaction: SKPaymentTransaction, decisionHandler: (Bool) -> Void) {
         //課金終了時に呼び出される
         /*
-        TODO: コンテンツ解放処理
-
-        
-        
-        
-        
-        */
-        let ac = UIAlertController(title: "purchase finish!", message: nil, preferredStyle: .Alert)
-        ac.addAction(UIAlertAction(title: "OK", style: .Default, handler: nil))
-        self.presentViewController(ac, animated: true, completion: nil)
+         TODO: コンテンツ解放処理
+         
+         
+         
+         
+         
+         */
+        let ac = UIAlertController(title: "purchase finish!", message: nil, preferredStyle: .alert)
+        ac.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        self.present(ac, animated: true, completion: nil)
         
         //コンテンツ解放が終了したら、この処理を実行(true: 課金処理全部完了, false 課金処理中断)
-        decisionHandler(complete: true)
+        decisionHandler(true)
     }
     
-    func purchaseManager(purchaseManager: XXXPurchaseManager!, didFinishUntreatedPurchaseWithTransaction transaction: SKPaymentTransaction!, decisionHandler: ((complete: Bool) -> Void)!) {
+    func purchaseManager(_ purchaseManager: PurchaseManager, didFinishUntreatedTransaction transaction: SKPaymentTransaction, decisionHandler: (Bool) -> Void) {
         //課金終了時に呼び出される(startPurchaseで指定したプロダクトID以外のものが課金された時。)
         /*
-        TODO: コンテンツ解放処理
+         TODO: コンテンツ解放処理
+         
+         
+         
+         
+         
+         */
+        let ac = UIAlertController(title: "purchase finish!(Untreated.)", message: nil, preferredStyle: .alert)
+        ac.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        self.present(ac, animated: true, completion: nil)
         
         
-        
-        
-        
-        */
-        let ac = UIAlertController(title: "purchase finish!(Untreated.)", message: nil, preferredStyle: .Alert)
-        ac.addAction(UIAlertAction(title: "OK", style: .Default, handler: nil))
-        self.presentViewController(ac, animated: true, completion: nil)
-
-    
         //コンテンツ解放が終了したら、この処理を実行(true: 課金処理全部完了, false 課金処理中断)
-        decisionHandler(complete: true)
+        decisionHandler(true)
     }
     
-    func purchaseManager(purchaseManager: XXXPurchaseManager!, didFailWithError error: NSError!) {
+    func purchaseManager(_ purchaseManager: PurchaseManager, didFailTransactionWithError error: Error?) {
         //課金失敗時に呼び出される
         /*
-        TODO: errorを使ってアラート表示
-        
-        
-        
-        
-        
-        */
-        let ac = UIAlertController(title: "purchase fail...", message: error.localizedDescription, preferredStyle: .Alert)
-        ac.addAction(UIAlertAction(title: "OK", style: .Default, handler: nil))
-        self.presentViewController(ac, animated: true, completion: nil)
-
+         TODO: errorを使ってアラート表示
+         
+         
+         
+         
+         
+         */
+        let ac = UIAlertController(title: "purchase fail...", message: error?.localizedDescription, preferredStyle: .alert)
+        ac.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        present(ac, animated: true, completion: nil)
     }
     
-    func purchaseManagerDidFinishRestore(purchaseManager: XXXPurchaseManager!) {
+    
+    func purchaseManagerDidFinishRestore(_ purchaseManager: PurchaseManager) {
         //リストア終了時に呼び出される(個々のトランザクションは”課金終了”で処理)
         /*
-        TODO: インジケータなどを表示していたら非表示に
-        
-        
-        
-        
-        
-        */
-        let ac = UIAlertController(title: "restore finish!", message: nil, preferredStyle: .Alert)
-        ac.addAction(UIAlertAction(title: "OK", style: .Default, handler: nil))
-        self.presentViewController(ac, animated: true, completion: nil)
+         TODO: インジケータなどを表示していたら非表示に
+         
+         
+         
+         
+         
+         */
+        let ac = UIAlertController(title: "restore finish!", message: nil, preferredStyle: .alert)
+        ac.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        present(ac, animated: true, completion: nil)
     }
     
-    func purchaseManagerDidDeferred(purchaseManager: XXXPurchaseManager!) {
+    
+    func purchaseManagerDidDeferred(_ purchaseManager: PurchaseManager) {
         //承認待ち状態時に呼び出される(ファミリー共有)
-        /* 
-        TODO: インジケータなどを表示していたら非表示に
-        
-        
-        
-        
-        
-        */
-        let ac = UIAlertController(title: "purcase defferd.", message: nil, preferredStyle: .Alert)
-        ac.addAction(UIAlertAction(title: "OK", style: .Default, handler: nil))
-        self.presentViewController(ac, animated: true, completion: nil)
+        /*
+         TODO: インジケータなどを表示していたら非表示に
+         
+         
+         
+         
+         
+         */
+        let ac = UIAlertController(title: "purcase defferd.", message: nil, preferredStyle: .alert)
+        ac.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        present(ac, animated: true, completion: nil)
     }
-    
-
-
 }
 

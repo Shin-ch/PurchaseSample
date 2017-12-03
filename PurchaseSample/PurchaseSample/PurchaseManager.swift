@@ -46,7 +46,7 @@ open class PurchaseManager : NSObject {
     private var isRestore: Bool = false
     
     /// 課金開始
-    public func purchase(_ product: SKProduct){
+    public func purchase(product: SKProduct){
         
         var errors: PurchaseManagerErrors = []
         

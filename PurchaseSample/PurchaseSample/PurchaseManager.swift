@@ -40,10 +40,10 @@ open class PurchaseManager : NSObject {
     
     open static var shared = PurchaseManager()
 
-    weak var delegate : PurchaseManagerDelegate?
+    weak var delegate: PurchaseManagerDelegate?
     
-    private var productIdentifier : String?
-    private var isRestore : Bool = false
+    private var productIdentifier: String?
+    private var isRestore: Bool = false
     
     /// 課金開始
     public func purchase(_ product: SKProduct){

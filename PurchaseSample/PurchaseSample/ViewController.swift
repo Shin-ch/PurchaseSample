@@ -50,7 +50,7 @@ class ViewController: UIViewController {
         })
     }
 
-    @IBAction func didTappPurchaseButton(_ sender: UIButton!) {
+    @IBAction func didTapPurchaseButton(_ sender: UIButton!) {
         //課金開始（サンプルでは"productIdentifier1"決め打ちで）
         guard let productIdentifier = productIdentifiers.first else { return }
         purchase(productIdentifier)

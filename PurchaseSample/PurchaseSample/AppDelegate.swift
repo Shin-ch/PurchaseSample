@@ -29,7 +29,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,PurchaseManagerDelegate {
 
     func applicationWillTerminate(_ application: UIApplication) {
         // オブザーバー登録解除
-        SKPaymentQueue.default().remove(PurchaseManager.shared);
+        SKPaymentQueue.default().remove(PurchaseManager.shared)
     }
 
     func purchaseManager(_ purchaseManager: PurchaseManager, didFinishUntreatedTransaction transaction: SKPaymentTransaction, decisionHandler: (Bool) -> Void) {

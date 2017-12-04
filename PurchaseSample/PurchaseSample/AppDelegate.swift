@@ -27,10 +27,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate,PurchaseManagerDelegate {
         return true
     }
 
-    func applicationWillEnterForeground(_ application: UIApplication) {
-        // Called as part of the transition from the background to the inactive state; here you can undo many of the changes made on entering the background.
+    func applicationWillTerminate(_ application: UIApplication) {
         // オブザーバー登録解除
-        SKPaymentQueue.default().remove(PurchaseManager.shared);
+        SKPaymentQueue.default().remove(PurchaseManager.shared)
     }
 
     func purchaseManager(_ purchaseManager: PurchaseManager, didFinishUntreatedTransaction transaction: SKPaymentTransaction, decisionHandler: (Bool) -> Void) {

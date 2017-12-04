@@ -13,9 +13,9 @@ import StoreKit
 
 class ViewController: UIViewController {
     
-    let productIdentifiers : [String] = ["productIdentifier1"]
+    let productIdentifiers = ["productIdentifier1"]
     
-    @IBOutlet weak var label : UILabel?
+    @IBOutlet weak var label: UILabel?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -50,19 +50,16 @@ class ViewController: UIViewController {
         })
     }
 
-    @IBAction func didTappPurchaseButton(_ sender: UIButton!) {
+    ///課金開始
+    @IBAction func didTapPurchaseButton(_ sender: UIButton!) {
         //課金開始（サンプルでは"productIdentifier1"決め打ちで）
         guard let productIdentifier = productIdentifiers.first else { return }
-        purchase(productIdentifier)
+        purchase(productIdentifier: productIdentifier)
     }
 
     ///課金開始
-    private func purchase(_ productId: String) {
-        //デリゲード設定
-        PurchaseManager.shared.delegate = self
-        
-        //プロダクト情報を取得
-        ProductManager.request(productIdentifier: productId,
+    private func purchase(productIdentifier: String) {
+        ProductManager.request(productIdentifier: productIdentifier,
             completion: {[weak self]  (product: SKProduct?, error: Error?) -> Void in
                 guard error == nil, let product = product else {
                     self?.purchaseManager(PurchaseManager.shared, didFailTransactionWithError: error)
@@ -70,7 +67,7 @@ class ViewController: UIViewController {
                 }
                 
                 //課金処理開始
-                PurchaseManager.shared.purchase(product)
+                PurchaseManager.shared.purchase(product: product)
         })
     }
 

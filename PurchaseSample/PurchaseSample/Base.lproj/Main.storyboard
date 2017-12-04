@@ -25,7 +25,7 @@
                                 <rect key="frame" x="153.5" y="318.5" width="68" height="30"/>
                                 <state key="normal" title="purchase!"/>
                                 <connections>
-                                    <action selector="didTapPurchaseButton:" destination="BYZ-38-t0r" eventType="touchUpInside" id="zJ5-RL-bLf"/>
+                                    <action selector="didTapPurchaseButton:" destination="BYZ-38-t0r" eventType="touchUpInside" id="DJG-mQ-zOe"/>
                                 </connections>
                             </button>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="loading...." textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="CAa-Sv-0oQ">

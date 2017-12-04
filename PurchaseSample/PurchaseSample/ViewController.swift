@@ -50,7 +50,8 @@ class ViewController: UIViewController {
         })
     }
 
-    @IBAction func didTapPurchaseButton(_ sender: UIButton?) {
+    ///課金開始
+    @IBAction func didTapPurchaseButton(_ sender: UIButton!) {
         //課金開始（サンプルでは"productIdentifier1"決め打ちで）
         guard let productIdentifier = productIdentifiers.first else { return }
         purchase(productIdentifier: productIdentifier)
@@ -58,10 +59,6 @@ class ViewController: UIViewController {
 
     ///課金開始
     private func purchase(productIdentifier: String) {
-        //デリゲード設定
-        PurchaseManager.shared.delegate = self
-        
-        //プロダクト情報を取得
         ProductManager.request(productIdentifier: productIdentifier,
             completion: {[weak self]  (product: SKProduct?, error: Error?) -> Void in
                 guard error == nil, let product = product else {
